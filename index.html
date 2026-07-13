@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HCXAIResearch — Model Card Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@300;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal:#0E7C7B;
+    --teal-deep:#124E52;
+    --teal-tint:#E6F4F4;
+    --navy:#1B2A4A;
+    --ink:#111827;
+    --muted:#5b6572;
+    --border:#e4e8ec;
+    --bg:#f5f7f9;
+    --white:#ffffff;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ===== Header ===== */
+  .app-header{
+    background:var(--white);
+    border-bottom:1px solid var(--border);
+    padding:.9rem 1.5rem;
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    flex-wrap:wrap;
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:.75rem;}
+  .brand svg{flex:none;}
+  .wordmark{font-family:'Poppins',sans-serif;font-size:1.35rem;letter-spacing:-.5px;line-height:1;}
+  .wordmark .hcx{font-weight:700;color:var(--ink);}
+  .wordmark .ai{font-weight:700;color:var(--teal);}
+  .wordmark .research{font-weight:300;color:var(--ink);}
+  .brand-sub{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:3px;}
+  .header-actions{display:flex;gap:.5rem;flex-wrap:wrap;}
+
+  .btn{
+    font-family:inherit;font-size:.85rem;font-weight:600;
+    border-radius:var(--radius-sm);padding:.55rem .95rem;cursor:pointer;
+    border:1px solid var(--border);background:var(--white);color:var(--navy);
+    display:inline-flex;align-items:center;gap:.4rem;transition:.15s;
+  }
+  .btn:hover{border-color:var(--teal);color:var(--teal-deep);}
+  .btn svg{width:15px;height:15px;}
+  .btn-primary{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .btn-primary:hover{background:var(--teal-deep);border-color:var(--teal-deep);color:#fff;}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--muted);}
+  .btn-ghost:hover{color:var(--navy);border-color:var(--border);}
+
+  /* ===== Layout ===== */
+  .layout{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:0;align-items:start;
+  }
+  .editor{
+    padding:1.5rem;max-height:calc(100vh - 62px);overflow-y:auto;
+    border-right:1px solid var(--border);
+  }
+  .preview-pane{
+    padding:1.5rem;max-height:calc(100vh - 62px);overflow-y:auto;
+    background:linear-gradient(180deg,#eef1f4,#f5f7f9);
+  }
+  @media (max-width:940px){
+    .layout{grid-template-columns:1fr;}
+    .editor,.preview-pane{max-height:none;border-right:none;}
+    .editor{border-bottom:1px solid var(--border);}
+  }
+
+  /* ===== Form ===== */
+  .intro{font-size:.9rem;color:var(--muted);margin:0 0 1.25rem;max-width:60ch;}
+  .intro strong{color:var(--navy);}
+  fieldset{
+    border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--white);padding:1.1rem 1.2rem 1.25rem;margin:0 0 1.1rem;
+  }
+  legend{
+    font-weight:600;font-size:.82rem;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--teal-deep);padding:0 .5rem;display:flex;align-items:center;gap:.5rem;
+  }
+  legend .num{
+    background:var(--teal-tint);color:var(--teal-deep);font-size:.72rem;font-weight:700;
+    width:20px;height:20px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .field{margin-bottom:.85rem;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-size:.82rem;font-weight:600;color:var(--navy);margin-bottom:.3rem;}
+  .field .hint{font-size:.74rem;color:var(--muted);font-weight:400;margin-top:.25rem;}
+  input[type=text],input[type=url],input[type=date],select,textarea{
+    width:100%;font-family:inherit;font-size:.88rem;color:var(--ink);
+    border:1px solid var(--border);border-radius:var(--radius-sm);
+    padding:.55rem .65rem;background:#fbfcfd;transition:.15s;
+  }
+  input:focus,select:focus,textarea:focus{
+    outline:none;border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px rgba(14,124,123,.12);
+  }
+  textarea{resize:vertical;min-height:70px;line-height:1.5;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+  @media (max-width:520px){.grid-2{grid-template-columns:1fr;}}
+
+  /* repeatable rows */
+  .rows{display:flex;flex-direction:column;gap:.55rem;}
+  .row{display:grid;grid-template-columns:1fr 1fr auto;gap:.5rem;align-items:center;}
+  .row.single{grid-template-columns:1fr auto;}
+  .row-del{
+    border:1px solid var(--border);background:#fff;color:var(--muted);border-radius:var(--radius-sm);
+    width:34px;height:34px;cursor:pointer;font-size:1rem;line-height:1;flex:none;
+  }
+  .row-del:hover{border-color:#e11d48;color:#e11d48;}
+  .add-row{margin-top:.6rem;}
+
+  /* governance controls */
+  .checks{display:flex;flex-wrap:wrap;gap:.5rem;}
+  .check{
+    display:inline-flex;align-items:center;gap:.4rem;font-size:.83rem;font-weight:500;
+    border:1px solid var(--border);border-radius:999px;padding:.4rem .75rem;cursor:pointer;background:#fbfcfd;
+  }
+  .check input{accent-color:var(--teal);margin:0;}
+  .check:has(input:checked){border-color:var(--teal);background:var(--teal-tint);color:var(--teal-deep);font-weight:600;}
+
+  /* ===== Model Card preview ===== */
+  .card{
+    background:var(--white);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;max-width:720px;margin:0 auto;
+  }
+  .card-top{
+    background:var(--navy);color:#fff;padding:1.6rem 1.7rem 1.5rem;position:relative;
+  }
+  .card-top .kicker{
+    font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:#9db3d6;font-weight:600;margin-bottom:.5rem;
+    display:flex;align-items:center;gap:.5rem;
+  }
+  .card-top h1{font-size:1.55rem;font-weight:700;margin:0 0 .15rem;letter-spacing:-.02em;line-height:1.15;}
+  .card-top .provider{font-size:.95rem;color:#c8d5ea;font-weight:500;margin:0;}
+  .card-meta{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem;}
+  .chip{
+    font-size:.72rem;font-weight:600;background:rgba(255,255,255,.1);color:#e5edf7;
+    border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:.28rem .7rem;
+  }
+  .chip .k{color:#9db3d6;font-weight:500;margin-right:.3rem;}
+  .card-top .teal-rule{position:absolute;left:0;bottom:0;height:4px;width:100%;
+    background:linear-gradient(90deg,var(--teal),#3fb0ad);}
+
+  .card-body{padding:1.5rem 1.7rem 1.8rem;}
+  .sec{margin-bottom:1.4rem;}
+  .sec:last-child{margin-bottom:0;}
+  .sec-h{
+    font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-deep);
+    font-weight:700;margin:0 0 .6rem;padding-bottom:.4rem;border-bottom:2px solid var(--teal-tint);
+  }
+  .sec p{margin:.2rem 0;font-size:.9rem;color:#2b333d;}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:.35rem .9rem;font-size:.9rem;}
+  .kv dt{color:var(--muted);font-weight:600;}
+  .kv dd{margin:0;color:#2b333d;}
+  .sec ul{margin:.2rem 0;padding-left:1.1rem;font-size:.9rem;color:#2b333d;}
+  .sec ul li{margin:.2rem 0;}
+  .src-list{list-style:none;margin:.2rem 0;padding:0;font-size:.88rem;}
+  .src-list li{padding:.35rem 0;border-bottom:1px dashed var(--border);}
+  .src-list li:last-child{border-bottom:none;}
+  .src-list .st{font-weight:600;color:var(--navy);}
+  .src-list .su{color:var(--teal-deep);word-break:break-all;font-size:.82rem;}
+  .bench{width:100%;border-collapse:collapse;font-size:.86rem;}
+  .bench th,.bench td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--border);}
+  .bench th{color:var(--muted);font-weight:600;font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;}
+
+  .gov-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem;}
+  .tag{font-size:.75rem;font-weight:600;border-radius:6px;padding:.28rem .6rem;border:1px solid;}
+  .tag.nist{background:var(--teal-tint);color:var(--teal-deep);border-color:#bfe3e2;}
+  .tag.risk{border-width:1px;}
+  .risk-prohibited{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
+  .risk-high{background:#ffedd5;color:#9a3412;border-color:#fdba74;}
+  .risk-limited{background:#dbeafe;color:#1e40af;border-color:#93c5fd;}
+  .risk-minimal{background:#dcfce7;color:#166534;border-color:#86efac;}
+  .risk-none{background:#f1f5f9;color:#475569;border-color:#cbd5e1;}
+
+  .card-foot{
+    padding:1rem 1.7rem 1.3rem;border-top:1px solid var(--border);background:#fafbfc;
+    font-size:.78rem;color:var(--muted);display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  }
+  .card-foot .fl{display:flex;align-items:center;gap:.5rem;}
+  .empty-note{color:var(--muted);font-style:italic;font-size:.85rem;}
+
+  .preview-label{
+    font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    font-weight:600;text-align:center;margin:0 0 1rem;
+  }
+
+  /* ===== Print ===== */
+  @media print{
+    .app-header,.editor,.preview-label{display:none !important;}
+    .layout{display:block;}
+    .preview-pane{padding:0;max-height:none;overflow:visible;background:#fff;}
+    .card{border:none;box-shadow:none;max-width:100%;border-radius:0;}
+    .card-top{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .tag,.chip{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    @page{margin:14mm;}
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <svg width="42" height="42" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M15 8 H7 V40 H15" fill="none" stroke="#124E52" stroke-width="3.4" stroke-linecap="square"/>
+      <path d="M33 8 H41 V40 H33" fill="none" stroke="#124E52" stroke-width="3.4" stroke-linecap="square"/>
+      <circle cx="24" cy="19" r="3.4" fill="#111827"/>
+      <path d="M17.5 31 a6.5 6.5 0 0 1 13 0" fill="none" stroke="#111827" stroke-width="3.2" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="wordmark"><span class="hcx">HCX</span><span class="ai">AI</span><span class="research">Research</span></div>
+      <div class="brand-sub">Model Card Generator</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" id="sampleBtn" title="Fill with an example">Load sample</button>
+    <button class="btn btn-ghost" id="clearBtn" title="Clear all fields">Clear</button>
+    <button class="btn" id="htmlBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      HTML
+    </button>
+    <button class="btn" id="mdBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15V9l2.5 3L12 9v6"/><path d="M16 9v4"/><path d="M14.5 11.5 16 13l1.5-1.5"/></svg>
+      Markdown
+    </button>
+    <button class="btn btn-primary" id="printBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print / PDF
+    </button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- ============ EDITOR ============ -->
+  <div class="editor">
+    <p class="intro">A deployer's model card. You fill in what a <strong>vendor's public documentation</strong> tells you, plus <strong>your own deployment context and controls</strong> — not internals only the model developer would hold. Everything updates the preview on the right.</p>
+
+    <form id="form" autocomplete="off">
+
+      <fieldset>
+        <legend><span class="num">1</span> Identification</legend>
+        <div class="field">
+          <label for="modelName">Model name</label>
+          <input type="text" id="modelName" placeholder="e.g. Gemini 1.0 Pro">
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="provider">Provider / developer</label>
+            <input type="text" id="provider" placeholder="e.g. Google">
+          </div>
+          <div class="field">
+            <label for="version">Model version</label>
+            <input type="text" id="version" placeholder="e.g. 1.0 (Feb 2024)">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="modality">Modality</label>
+            <input type="text" id="modality" placeholder="e.g. Text + image input, text output">
+          </div>
+          <div class="field">
+            <label for="status">Deployment status</label>
+            <select id="status">
+              <option value="">—</option>
+              <option>Under evaluation</option>
+              <option>Approved for deployment</option>
+              <option>Deployed — monitored</option>
+              <option>Restricted use</option>
+              <option>Retired</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="preparedBy">Card prepared by</label>
+            <input type="text" id="preparedBy" placeholder="e.g. HCXAIResearch — AI Governance">
+          </div>
+          <div class="field">
+            <label for="cardDate">Date</label>
+            <input type="date" id="cardDate">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">2</span> Source documentation</legend>
+        <p class="hint" style="margin-top:-.3rem;margin-bottom:.6rem;">The vendor material this card is based on. This is your provenance trail.</p>
+        <div class="rows" id="sourceRows"></div>
+        <button type="button" class="btn btn-ghost add-row" data-add="source">+ Add source</button>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">3</span> Intended use (as deployed)</legend>
+        <div class="field">
+          <label for="useCase">Our deployment purpose</label>
+          <textarea id="useCase" placeholder="What your organization uses this model for, and in what workflow."></textarea>
+        </div>
+        <div class="field">
+          <label for="intendedUsers">Intended users (in our context)</label>
+          <textarea id="intendedUsers" placeholder="Who interacts with or is affected by the model in your deployment."></textarea>
+        </div>
+        <div class="field">
+          <label for="outOfScope">Out-of-scope &amp; prohibited uses</label>
+          <textarea id="outOfScope" placeholder="Uses you disallow, plus any the vendor prohibits (cite their policy)."></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">4</span> Vendor-stated capabilities &amp; performance</legend>
+        <div class="field">
+          <label for="capabilities">Capabilities summary (per vendor docs)</label>
+          <textarea id="capabilities" placeholder="What the provider says the model does well."></textarea>
+        </div>
+        <div class="field">
+          <label>Reported benchmark / evaluation results</label>
+          <p class="hint" style="margin-top:0;margin-bottom:.5rem;">As reported by the vendor — note the source. Leave blank if not published.</p>
+          <div class="rows" id="benchRows"></div>
+          <button type="button" class="btn btn-ghost add-row" data-add="bench">+ Add result</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">5</span> Limitations &amp; risks (documented)</legend>
+        <div class="field">
+          <label for="limitations">Known limitations</label>
+          <textarea id="limitations" placeholder="e.g. hallucinations, English-centric performance, weak long-horizon reasoning."></textarea>
+        </div>
+        <div class="field">
+          <label for="bias">Bias &amp; fairness notes</label>
+          <textarea id="bias" placeholder="Representational harms, group-based disparities noted by the vendor."></textarea>
+        </div>
+        <div class="field">
+          <label for="safety">Safety considerations</label>
+          <textarea id="safety" placeholder="Vendor safety findings relevant to your use (e.g. dangerous-capability evals, content risks)."></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">6</span> Our deployment context &amp; mitigations</legend>
+        <div class="field">
+          <label for="environment">Deployment environment / integration</label>
+          <textarea id="environment" placeholder="How and where the model runs in your systems; access controls; data flows."></textarea>
+        </div>
+        <div class="field">
+          <label for="oversight">Human oversight</label>
+          <textarea id="oversight" placeholder="Where a human reviews, approves, or can override outputs."></textarea>
+        </div>
+        <div class="field">
+          <label for="mitigations">Guardrails &amp; mitigations we apply</label>
+          <textarea id="mitigations" placeholder="Filtering, prompt constraints, rate limits, fallback behaviour, disclaimers."></textarea>
+        </div>
+        <div class="field">
+          <label for="monitoring">Monitoring &amp; feedback</label>
+          <textarea id="monitoring" placeholder="What you log, how issues are reported, review cadence."></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">7</span> Governance tags</legend>
+        <div class="field">
+          <label>NIST AI RMF functions addressed</label>
+          <div class="checks" id="nistChecks">
+            <label class="check"><input type="checkbox" value="Govern" data-nist> Govern</label>
+            <label class="check"><input type="checkbox" value="Map" data-nist> Map</label>
+            <label class="check"><input type="checkbox" value="Measure" data-nist> Measure</label>
+            <label class="check"><input type="checkbox" value="Manage" data-nist> Manage</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="euRisk">EU AI Act risk classification</label>
+          <select id="euRisk">
+            <option value="">Not classified</option>
+            <option>Prohibited</option>
+            <option>High-risk</option>
+            <option>Limited risk</option>
+            <option>Minimal risk</option>
+          </select>
+          <p class="hint">Your assessment of the deployed use case under the EU AI Act.</p>
+        </div>
+        <div class="field">
+          <label for="govNotes">Governance rationale / notes</label>
+          <textarea id="govNotes" placeholder="Why this classification; obligations triggered; owner and review date."></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">8</span> Contact</legend>
+        <div class="field">
+          <label for="contact">Questions about this card</label>
+          <input type="text" id="contact" placeholder="e.g. governance@hcxairesearch.org">
+        </div>
+      </fieldset>
+
+    </form>
+  </div>
+
+  <!-- ============ PREVIEW ============ -->
+  <div class="preview-pane">
+    <p class="preview-label">Live preview</p>
+    <div class="card" id="card"><!-- rendered --></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const form = $('form');
+  const card = $('card');
+
+  // ---- default date = today ----
+  $('cardDate').value = new Date().toISOString().slice(0,10);
+  $('preparedBy').value = 'HCXAIResearch';
+
+  // ---- repeatable rows ----
+  function makeRow(type, a='', b=''){
+    const row = document.createElement('div');
+    if(type==='source'){
+      row.className='row';
+      row.innerHTML =
+        '<input type="text" data-src-title placeholder="Document title" value="'+esc(a)+'">'+
+        '<input type="url" data-src-url placeholder="URL or reference" value="'+esc(b)+'">'+
+        '<button type="button" class="row-del" aria-label="Remove">&times;</button>';
+    } else {
+      row.className='row';
+      row.innerHTML =
+        '<input type="text" data-bench-name placeholder="Benchmark / metric" value="'+esc(a)+'">'+
+        '<input type="text" data-bench-val placeholder="Result (e.g. MMLU 79.1%)" value="'+esc(b)+'">'+
+        '<button type="button" class="row-del" aria-label="Remove">&times;</button>';
+    }
+    row.querySelector('.row-del').addEventListener('click',()=>{row.remove();render();});
+    return row;
+  }
+  document.querySelectorAll('[data-add]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const t = btn.getAttribute('data-add');
+      $(t==='source'?'sourceRows':'benchRows').appendChild(makeRow(t));
+      render();
+    });
+  });
+  // seed one empty source row
+  $('sourceRows').appendChild(makeRow('source'));
+
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function nl2br(s){return esc(s).replace(/\n/g,'<br>');}
+
+  // ---- read all data ----
+  function read(){
+    const nist = [...document.querySelectorAll('[data-nist]:checked')].map(c=>c.value);
+    const sources = [...$('sourceRows').querySelectorAll('.row')].map(r=>({
+      title:r.querySelector('[data-src-title]').value.trim(),
+      url:r.querySelector('[data-src-url]').value.trim()
+    })).filter(s=>s.title||s.url);
+    const bench = [...$('benchRows').querySelectorAll('.row')].map(r=>({
+      name:r.querySelector('[data-bench-name]').value.trim(),
+      val:r.querySelector('[data-bench-val]').value.trim()
+    })).filter(b=>b.name||b.val);
+    return {
+      modelName:$('modelName').value.trim(),
+      provider:$('provider').value.trim(),
+      version:$('version').value.trim(),
+      modality:$('modality').value.trim(),
+      status:$('status').value,
+      preparedBy:$('preparedBy').value.trim(),
+      cardDate:$('cardDate').value,
+      sources, bench, nist,
+      useCase:$('useCase').value.trim(),
+      intendedUsers:$('intendedUsers').value.trim(),
+      outOfScope:$('outOfScope').value.trim(),
+      capabilities:$('capabilities').value.trim(),
+      limitations:$('limitations').value.trim(),
+      bias:$('bias').value.trim(),
+      safety:$('safety').value.trim(),
+      environment:$('environment').value.trim(),
+      oversight:$('oversight').value.trim(),
+      mitigations:$('mitigations').value.trim(),
+      monitoring:$('monitoring').value.trim(),
+      euRisk:$('euRisk').value,
+      govNotes:$('govNotes').value.trim(),
+      contact:$('contact').value.trim()
+    };
+  }
+
+  function fmtDate(d){
+    if(!d) return '';
+    const dt = new Date(d+'T00:00:00');
+    return dt.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  }
+  const riskClass = {'Prohibited':'risk-prohibited','High-risk':'risk-high','Limited risk':'risk-limited','Minimal risk':'risk-minimal'};
+
+  // block of paragraph text
+  function textSec(title,val){
+    if(!val) return '';
+    return '<div class="sec"><h2 class="sec-h">'+esc(title)+'</h2><p>'+nl2br(val)+'</p></div>';
+  }
+
+  // ---- render card ----
+  function render(){
+    const d = read();
+    const anything = d.modelName||d.provider||d.useCase||d.sources.length||d.capabilities||d.limitations;
+
+    let h = '';
+    // header
+    h += '<div class="card-top">';
+    h +=   '<div class="kicker">Model Card'+(d.status?' &middot; '+esc(d.status):'')+'</div>';
+    h +=   '<h1>'+(d.modelName?esc(d.modelName):'Untitled model')+'</h1>';
+    h +=   '<p class="provider">'+(d.provider?esc(d.provider):'Provider not specified')+'</p>';
+    const chips=[];
+    if(d.version) chips.push('<span class="chip"><span class="k">Version</span>'+esc(d.version)+'</span>');
+    if(d.modality) chips.push('<span class="chip"><span class="k">Modality</span>'+esc(d.modality)+'</span>');
+    if(chips.length) h+='<div class="card-meta">'+chips.join('')+'</div>';
+    h +=   '<div class="teal-rule"></div>';
+    h += '</div>';
+
+    h += '<div class="card-body">';
+
+    if(!anything){
+      h += '<p class="empty-note">Start filling in the form to build the card. Sections appear here as you add content.</p>';
+    }
+
+    // governance tags (near top for visibility)
+    if(d.nist.length || d.euRisk || d.govNotes){
+      h += '<div class="sec"><h2 class="sec-h">Governance</h2>';
+      const tags=[];
+      if(d.euRisk){ tags.push('<span class="tag risk '+(riskClass[d.euRisk]||'risk-none')+'">EU AI Act: '+esc(d.euRisk)+'</span>'); }
+      d.nist.forEach(n=>tags.push('<span class="tag nist">NIST AI RMF: '+esc(n)+'</span>'));
+      if(tags.length) h+='<div class="gov-tags">'+tags.join('')+'</div>';
+      if(d.govNotes) h+='<p>'+nl2br(d.govNotes)+'</p>';
+      h += '</div>';
+    }
+
+    // intended use
+    if(d.useCase||d.intendedUsers||d.outOfScope){
+      h += '<div class="sec"><h2 class="sec-h">Intended use (as deployed)</h2><dl class="kv">';
+      if(d.useCase) h+='<dt>Purpose</dt><dd>'+nl2br(d.useCase)+'</dd>';
+      if(d.intendedUsers) h+='<dt>Intended users</dt><dd>'+nl2br(d.intendedUsers)+'</dd>';
+      if(d.outOfScope) h+='<dt>Out of scope</dt><dd>'+nl2br(d.outOfScope)+'</dd>';
+      h += '</dl></div>';
+    }
+
+    // capabilities + benchmarks
+    if(d.capabilities||d.bench.length){
+      h += '<div class="sec"><h2 class="sec-h">Vendor-stated capabilities &amp; performance</h2>';
+      if(d.capabilities) h+='<p>'+nl2br(d.capabilities)+'</p>';
+      if(d.bench.length){
+        h+='<table class="bench"><thead><tr><th>Benchmark / metric</th><th>Reported result</th></tr></thead><tbody>';
+        d.bench.forEach(b=>h+='<tr><td>'+esc(b.name)+'</td><td>'+esc(b.val)+'</td></tr>');
+        h+='</tbody></table>';
+      }
+      h += '</div>';
+    }
+
+    // limitations
+    if(d.limitations||d.bias||d.safety){
+      h += '<div class="sec"><h2 class="sec-h">Limitations &amp; risks</h2><dl class="kv">';
+      if(d.limitations) h+='<dt>Known limitations</dt><dd>'+nl2br(d.limitations)+'</dd>';
+      if(d.bias) h+='<dt>Bias &amp; fairness</dt><dd>'+nl2br(d.bias)+'</dd>';
+      if(d.safety) h+='<dt>Safety</dt><dd>'+nl2br(d.safety)+'</dd>';
+      h += '</dl></div>';
+    }
+
+    // deployment context
+    if(d.environment||d.oversight||d.mitigations||d.monitoring){
+      h += '<div class="sec"><h2 class="sec-h">Our deployment context &amp; mitigations</h2><dl class="kv">';
+      if(d.environment) h+='<dt>Environment</dt><dd>'+nl2br(d.environment)+'</dd>';
+      if(d.oversight) h+='<dt>Human oversight</dt><dd>'+nl2br(d.oversight)+'</dd>';
+      if(d.mitigations) h+='<dt>Guardrails</dt><dd>'+nl2br(d.mitigations)+'</dd>';
+      if(d.monitoring) h+='<dt>Monitoring</dt><dd>'+nl2br(d.monitoring)+'</dd>';
+      h += '</dl></div>';
+    }
+
+    // sources
+    if(d.sources.length){
+      h += '<div class="sec"><h2 class="sec-h">Source documentation</h2><ul class="src-list">';
+      d.sources.forEach(s=>{
+        h+='<li>'+(s.title?'<span class="st">'+esc(s.title)+'</span>':'');
+        if(s.url) h+='<div class="su">'+esc(s.url)+'</div>';
+        h+='</li>';
+      });
+      h += '</ul></div>';
+    }
+
+    h += '</div>'; // body
+
+    // footer
+    const fparts=[];
+    if(d.preparedBy) fparts.push('Prepared by '+esc(d.preparedBy));
+    if(d.cardDate) fparts.push(fmtDate(d.cardDate));
+    h += '<div class="card-foot"><div class="fl">'+
+         '<svg width="16" height="16" viewBox="0 0 48 48"><path d="M15 8 H7 V40 H15" fill="none" stroke="#124E52" stroke-width="4"/><path d="M33 8 H41 V40 H33" fill="none" stroke="#124E52" stroke-width="4"/><circle cx="24" cy="19" r="3.6" fill="#111827"/><path d="M17.5 31 a6.5 6.5 0 0 1 13 0" fill="none" stroke="#111827" stroke-width="3.4" stroke-linecap="round"/></svg>'+
+         '<span>'+(fparts.join(' &middot; ')||'HCXAIResearch')+'</span></div>'+
+         '<div>'+(d.contact?esc(d.contact):'')+'</div></div>';
+
+    card.innerHTML = h;
+  }
+
+  form.addEventListener('input',render);
+  form.addEventListener('change',render);
+
+  // ---- filename ----
+  function slug(d){
+    const base=(d.modelName||'model')+'-model-card';
+    return base.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  }
+
+  // ---- standalone HTML/print CSS (self-contained) ----
+  function docCSS(){
+    return `
+    body{font-family:'Inter',system-ui,Arial,sans-serif;color:#111827;background:#f5f7f9;margin:0;padding:28px;line-height:1.55;}
+    .card{background:#fff;border:1px solid #e4e8ec;border-radius:14px;overflow:hidden;max-width:720px;margin:0 auto;box-shadow:0 4px 16px rgba(16,24,40,.06);}
+    .card-top{background:#1B2A4A;color:#fff;padding:1.6rem 1.7rem 1.5rem;position:relative;}
+    .card-top .kicker{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:#9db3d6;font-weight:600;margin-bottom:.5rem;}
+    .card-top h1{font-size:1.55rem;font-weight:700;margin:0 0 .15rem;letter-spacing:-.02em;}
+    .card-top .provider{font-size:.95rem;color:#c8d5ea;margin:0;}
+    .card-meta{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem;}
+    .chip{font-size:.72rem;font-weight:600;background:rgba(255,255,255,.1);color:#e5edf7;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:.28rem .7rem;}
+    .chip .k{color:#9db3d6;font-weight:500;margin-right:.3rem;}
+    .teal-rule{position:absolute;left:0;bottom:0;height:4px;width:100%;background:linear-gradient(90deg,#0E7C7B,#3fb0ad);}
+    .card-body{padding:1.5rem 1.7rem 1.8rem;}
+    .sec{margin-bottom:1.4rem;} .sec:last-child{margin-bottom:0;}
+    .sec-h{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:#124E52;font-weight:700;margin:0 0 .6rem;padding-bottom:.4rem;border-bottom:2px solid #E6F4F4;}
+    .sec p{margin:.2rem 0;font-size:.9rem;color:#2b333d;}
+    .kv{display:grid;grid-template-columns:150px 1fr;gap:.35rem .9rem;font-size:.9rem;}
+    .kv dt{color:#5b6572;font-weight:600;} .kv dd{margin:0;color:#2b333d;}
+    .src-list{list-style:none;margin:.2rem 0;padding:0;font-size:.88rem;}
+    .src-list li{padding:.35rem 0;border-bottom:1px dashed #e4e8ec;} .src-list li:last-child{border-bottom:none;}
+    .src-list .st{font-weight:600;color:#1B2A4A;} .src-list .su{color:#124E52;word-break:break-all;font-size:.82rem;}
+    .bench{width:100%;border-collapse:collapse;font-size:.86rem;}
+    .bench th,.bench td{text-align:left;padding:.4rem .5rem;border-bottom:1px solid #e4e8ec;}
+    .bench th{color:#5b6572;font-weight:600;font-size:.76rem;text-transform:uppercase;}
+    .gov-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.5rem;}
+    .tag{font-size:.75rem;font-weight:600;border-radius:6px;padding:.28rem .6rem;border:1px solid;}
+    .tag.nist{background:#E6F4F4;color:#124E52;border-color:#bfe3e2;}
+    .risk-prohibited{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
+    .risk-high{background:#ffedd5;color:#9a3412;border-color:#fdba74;}
+    .risk-limited{background:#dbeafe;color:#1e40af;border-color:#93c5fd;}
+    .risk-minimal{background:#dcfce7;color:#166534;border-color:#86efac;}
+    .risk-none{background:#f1f5f9;color:#475569;border-color:#cbd5e1;}
+    .card-foot{padding:1rem 1.7rem 1.3rem;border-top:1px solid #e4e8ec;background:#fafbfc;font-size:.78rem;color:#5b6572;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+    .card-foot .fl{display:flex;align-items:center;gap:.5rem;}
+    `;
+  }
+  function standaloneHTML(){
+    const d=read();
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'+
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0">'+
+      '<title>'+esc(d.modelName||'Model')+' — Model Card</title>'+
+      '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">'+
+      '<style>'+docCSS()+'</style></head><body><div class="card">'+card.innerHTML+'</div></body></html>';
+  }
+  function download(content,filename,mime){
+    const blob=new Blob([content],{type:mime});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+
+  $('htmlBtn').addEventListener('click',()=>{
+    download(standaloneHTML(),slug(read())+'.html','text/html');
+  });
+
+  $('printBtn').addEventListener('click',()=>window.print());
+
+  // ---- Markdown (.md) ----
+  function mdText(){
+    const d=read();
+    const br = s => (s||'').replace(/\r?\n/g,'  \n');        // preserve line breaks
+    const cell = s => (s||'').replace(/\|/g,'\\|').replace(/\r?\n/g,' ');
+    const L=[];
+
+    L.push('# '+(d.modelName||'Untitled model'));
+    L.push('');
+    let sub='**Model Card**';
+    if(d.status) sub+=' — '+d.status;
+    L.push(sub+'  ');
+    L.push('**Provider:** '+(d.provider||'Not specified'));
+    L.push('');
+    if(d.version||d.modality){
+      L.push('| Field | Value |');
+      L.push('|---|---|');
+      if(d.version) L.push('| Version | '+cell(d.version)+' |');
+      if(d.modality) L.push('| Modality | '+cell(d.modality)+' |');
+      L.push('');
+    }
+
+    // governance
+    if(d.nist.length||d.euRisk||d.govNotes){
+      L.push('## Governance');
+      L.push('');
+      const tags=[];
+      if(d.euRisk) tags.push('`EU AI Act: '+d.euRisk+'`');
+      d.nist.forEach(n=>tags.push('`NIST AI RMF: '+n+'`'));
+      if(tags.length){ L.push(tags.join(' ')); L.push(''); }
+      if(d.govNotes){ L.push(br(d.govNotes)); L.push(''); }
+    }
+
+    const kv=(l,v)=>{ if(v){ L.push('**'+l+':** '+br(v)); L.push(''); } };
+
+    if(d.useCase||d.intendedUsers||d.outOfScope){
+      L.push('## Intended use (as deployed)'); L.push('');
+      kv('Purpose',d.useCase); kv('Intended users',d.intendedUsers); kv('Out of scope',d.outOfScope);
+    }
+    if(d.capabilities||d.bench.length){
+      L.push('## Vendor-stated capabilities & performance'); L.push('');
+      if(d.capabilities){ L.push(br(d.capabilities)); L.push(''); }
+      if(d.bench.length){
+        L.push('| Benchmark / metric | Reported result |');
+        L.push('|---|---|');
+        d.bench.forEach(b=>L.push('| '+cell(b.name)+' | '+cell(b.val)+' |'));
+        L.push('');
+      }
+    }
+    if(d.limitations||d.bias||d.safety){
+      L.push('## Limitations & risks'); L.push('');
+      kv('Known limitations',d.limitations); kv('Bias & fairness',d.bias); kv('Safety',d.safety);
+    }
+    if(d.environment||d.oversight||d.mitigations||d.monitoring){
+      L.push('## Our deployment context & mitigations'); L.push('');
+      kv('Environment',d.environment); kv('Human oversight',d.oversight); kv('Guardrails',d.mitigations); kv('Monitoring',d.monitoring);
+    }
+    if(d.sources.length){
+      L.push('## Source documentation'); L.push('');
+      d.sources.forEach(s=>{
+        let line='- ';
+        if(s.title) line+='**'+s.title+'**';
+        if(s.url) line+=(s.title?' — ':'')+'<'+s.url+'>';
+        L.push(line);
+      });
+      L.push('');
+    }
+
+    // footer
+    const f=[];
+    if(d.preparedBy) f.push('Prepared by '+d.preparedBy);
+    if(d.cardDate) f.push(fmtDate(d.cardDate));
+    if(d.contact) f.push('Contact: '+d.contact);
+    L.push('---');
+    L.push('*HCXAIResearch'+(f.length?' · '+f.join(' · '):'')+'*');
+    L.push('');
+
+    return L.join('\n');
+  }
+  $('mdBtn').addEventListener('click',()=>{
+    download(mdText(),slug(read())+'.md','text/markdown');
+  });
+
+  // ---- clear / sample ----
+  $('clearBtn').addEventListener('click',()=>{
+    if(!confirm('Clear all fields and start a new card?'))return;
+    form.reset();
+    $('cardDate').value=new Date().toISOString().slice(0,10);
+    $('preparedBy').value='HCXAIResearch';
+    $('sourceRows').innerHTML='';$('sourceRows').appendChild(makeRow('source'));
+    $('benchRows').innerHTML='';
+    render();
+  });
+
+  $('sampleBtn').addEventListener('click',()=>{
+    $('modelName').value='Gemini 1.0 Pro';
+    $('provider').value='Google';
+    $('version').value='1.0 (Feb 2024)';
+    $('modality').value='Text + image input, text output';
+    $('status').value='Deployed — monitored';
+    $('preparedBy').value='HCXAIResearch — AI Governance';
+    $('useCase').value='Drafting and summarising internal research notes within our review workflow. Model output is always a first draft, never a published deliverable.';
+    $('intendedUsers').value='Internal research and analyst staff. No external or public-facing use.';
+    $('outOfScope').value='Legal, medical or financial advice; automated decisions affecting individuals; any use prohibited under the provider\'s Generative AI Prohibited Use Policy.';
+    $('capabilities').value='Strong general text reasoning, summarisation and multilingual understanding; multimodal image understanding. Vendor reports competitive results against comparable models.';
+    $('limitations').value='Can generate confident falsehoods (hallucinations); performance stronger in English; limited long-horizon and causal reasoning; outputs vary on novel inputs.';
+    $('bias').value='Vendor notes potential representational harms and ungrounded inferences, particularly for image-to-text; bias benchmarks reported near-neutral but acknowledged as imperfect.';
+    $('safety').value='Vendor dangerous-capability evaluations (cyber, CBRN, persuasion, self-proliferation) reported as unlikely to enable catastrophic harm at this version. Content-safety filters applied by default.';
+    $('environment').value='Accessed via provider API within our internal tooling; no customer PII sent; requests logged; access limited to authenticated staff.';
+    $('oversight').value='A named reviewer signs off on any output before it leaves the drafting stage. Users can flag and discard outputs.';
+    $('mitigations').value='System-prompt scope constraints, input/output content filtering enabled, rate limits, and a standing disclaimer that outputs are AI-generated drafts.';
+    $('monitoring').value='Prompt/response logging with monthly review; incident reporting channel; quarterly re-assessment of this card.';
+    $('euRisk').value='Limited risk';
+    $('govNotes').value='Classified limited risk: internal drafting aid with mandatory human review and no automated decision-making. Transparency obligation met via AI-generated disclosure. Owner: AI Governance; next review in 3 months.';
+    $('contact').value='governance@hcxairesearch.org';
+    document.querySelectorAll('[data-nist]').forEach(c=>{c.checked=['Govern','Measure','Manage'].includes(c.value);});
+    $('sourceRows').innerHTML='';
+    $('sourceRows').appendChild(makeRow('source','Gemini: A Family of Highly Capable Multimodal Models (technical report)','https://storage.googleapis.com/deepmind-media/gemini/gemini_1_report.pdf'));
+    $('sourceRows').appendChild(makeRow('source','Gemini Ultra model card (report appendix)',''));
+    $('sourceRows').appendChild(makeRow('source','Generative AI Prohibited Use Policy',''));
+    $('benchRows').innerHTML='';
+    $('benchRows').appendChild(makeRow('bench','MMLU (5-shot)','79.13%'));
+    $('benchRows').appendChild(makeRow('bench','GSM8K (grade-school math)','86.5%'));
+    $('benchRows').appendChild(makeRow('bench','Note','Vendor-reported; not independently verified'));
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

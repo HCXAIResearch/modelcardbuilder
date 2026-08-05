@@ -10,7 +10,7 @@
 | Audience | AI governance leads, compliance and procurement teams, deployment owners |
 | Standards Reference | ISO/IEC 42001:2023; ISO/IEC 42005:2025; NIST AI RMF 1.0; EU AI Act (Regulation 2024/1689); OECD AI Principles; Model Cards for Model Reporting (Mitchell et al., 2019) |
 | License | See LICENSE |
-| Project Link | https://hcxairesearch.github.io/model-card-generator/ |
+| Project Link | https://hcxairesearch.github.io/modelcardbuilder/ |
 
 A single-file, browser-based tool that produces a model card for an AI system **from the perspective of the organisation deploying it**. You fill in what the provider's public documentation tells you, add your own deployment context and controls, and export a clean card as PDF, HTML or Markdown.
 

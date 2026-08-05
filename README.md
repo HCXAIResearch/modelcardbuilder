@@ -56,7 +56,7 @@ The rendered card leads with governance, so the classification and framework tag
 
 ## Running it
 
-Open `model-card-generator.html` in any modern browser. That is the whole installation procedure.
+Open `index.html` in any modern browser. That is the whole installation procedure.
 
 To host it, drop the file anywhere that serves static content — SharePoint document library, internal wiki, S3 bucket, GitHub Pages. It has no server dependency and no same-origin requirement.
 
@@ -68,7 +68,7 @@ The only external requests are Google Fonts. If your environment blocks them, th
 
 | File | Purpose |
 | --- | --- |
-| `model-card-generator.html` | The tool. Self-contained: markup, CSS, form logic and export logic in one file |
+| `index.html` | The tool. Self-contained: markup, CSS, form logic and export logic in one file |
 | `README.md` | This document |
 | `USER_MANUAL.md` | Field-by-field guidance, worked example, export notes, customisation |
 
